@@ -81,4 +81,32 @@
     }
   };
 
-  exportBt
+  exportBtn.onclick = () => {
+    if (records.length === 0) {
+      alert('Brak danych do eksportu');
+      return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Lp.,Data,Start,Stop,Czas (min)\n";
+    records.forEach((rec, i) => {
+      const start = new Date(rec.start);
+      const stop = new Date(rec.stop);
+      const diff = Math.floor((stop - start) / 60000);
+      csvContent += `${i+1},${start.toLocaleDateString()},${formatTime(start)},${formatTime(stop)},${diff}\n`;
+    });
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const now = new Date();
+    const filename = `ewidencja_${now.toISOString().slice(0,10)}.csv`;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  updateLog();
+</script>
+
+</body>
+</html>
