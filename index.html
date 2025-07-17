@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ewidencja pracy</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 2em; }
+  button { margin: 0.5em; padding: 0.5em 1em; font-size: 1em; }
+  #log { white-space: pre-wrap; margin-top: 1em; background: #f0f0f0; padding: 1em; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h1>Ewidencja czasu pracy</h1>
+
+<button id="startBtn">Start pracy</button>
+<button id="stopBtn" disabled>Zakończ pracę</button>
+<button id="clearBtn">Wyczyść dane</button>
+
+<div id="log"></div>
+
+<script>
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const logDiv = document.getElementById('log');
+
+  let startTime = null;
+  let stopTime = null;
+  let records = JSON.parse(localStorage.getItem('workRecords')) || [];
+
+  function formatTime(date) {
+    return date.toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+  }
+
+  function updateLog() {
+    let text = 'Ewidencja:\n\n';
+    let totalMs = 0;
+    records.forEach((rec, i) => {
+      const start = new Date(rec.start);
+      const stop = new Date(rec.stop);
+      const diff = stop - start;
+      totalMs += diff;
+      text += `${i+1}. ${start.toLocaleDateString()} ${formatTime(start)} - ${formatTime(stop)} (czas: ${Math.floor(diff/60000)} min)\n`;
+    });
+    const totalMin = Math.floor(totalMs / 60000);
+    text += `\nSuma: ${totalMin} minut`;
+    logDiv.textContent = text;
+  }
+
+  startBtn.onclick = () => {
+    startTime = new Date();
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    logDiv.textContent = `Praca rozpoczęta: ${formatTime(startTime)}`;
+  };
+
+  stopBtn.onclick = () => {
+    stopTime = new Date();
+    if (startTime) {
+      records.push({start: startTime.toISOString(), stop: stopTime.toISOString()});
+      localStorage.setItem('workRecords', JSON.stringify(records));
+      updateLog();
+    }
+    startTime = null;
+    stopTime = null;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  };
+
+  clearBtn.onclick = () => {
+    if (confirm('Czy na pewno chcesz wyczyścić wszystkie dane?')) {
+      records = [];
+      localStorage.removeItem('workRecords');
+      logDiv.textContent = '';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+  };
+
+  updateLog();
+</script>
+
+</body>
+</html>
