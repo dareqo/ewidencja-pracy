@@ -17,6 +17,7 @@
 <button id="startBtn">Start pracy</button>
 <button id="stopBtn" disabled>Zakończ pracę</button>
 <button id="clearBtn">Wyczyść dane</button>
+<button id="exportBtn">Eksportuj CSV</button>
 
 <div id="log"></div>
 
@@ -24,6 +25,7 @@
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
   const clearBtn = document.getElementById('clearBtn');
+  const exportBtn = document.getElementById('exportBtn');
   const logDiv = document.getElementById('log');
 
   let startTime = null;
@@ -79,8 +81,4 @@
     }
   };
 
-  updateLog();
-</script>
-
-</body>
-</html>
+  exportBt
