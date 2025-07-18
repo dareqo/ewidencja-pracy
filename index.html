@@ -1,112 +1,125 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ewidencja pracy</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 2em; }
-  button { margin: 0.5em; padding: 0.5em 1em; font-size: 1em; }
-  #log { white-space: pre-wrap; margin-top: 1em; background: #f0f0f0; padding: 1em; border-radius: 5px; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Ewidencja czasu pracy</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; }
+  </style>
 </head>
 <body>
+  <h1>Ewidencja czasu pracy</h1>
 
-<h1>Ewidencja czasu pracy</h1>
+  <button id="startBtn" onclick="startWork()">▶️ Start</button>
+  <button id="stopBtn" onclick="stopWork()">⏹️ Zakończ</button>
+  <button onclick="exportCSV()">⬇️ Eksportuj CSV</button>
 
-<button id="startBtn">Start pracy</button>
-<button id="stopBtn" disabled>Zakończ pracę</button>
-<button id="clearBtn">Wyczyść dane</button>
-<button id="exportBtn">Eksportuj CSV</button>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Start</th>
+        <th>Koniec</th>
+        <th>Czas pracy (min)</th>
+      </tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
 
-<div id="log"></div>
-
-<script>
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const clearBtn = document.getElementById('clearBtn');
-  const exportBtn = document.getElementById('exportBtn');
-  const logDiv = document.getElementById('log');
-
-  let startTime = null;
-  let stopTime = null;
-  let records = JSON.parse(localStorage.getItem('workRecords')) || [];
-
-  function formatTime(date) {
-    return date.toLocaleTimeString('pl-PL', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-  }
-
-  function updateLog() {
-    let text = 'Ewidencja:\n\n';
-    let totalMs = 0;
-    records.forEach((rec, i) => {
-      const start = new Date(rec.start);
-      const stop = new Date(rec.stop);
-      const diff = stop - start;
-      totalMs += diff;
-      text += `${i+1}. ${start.toLocaleDateString()} ${formatTime(start)} - ${formatTime(stop)} (czas: ${Math.floor(diff/60000)} min)\n`;
-    });
-    const totalMin = Math.floor(totalMs / 60000);
-    text += `\nSuma: ${totalMin} minut`;
-    logDiv.textContent = text;
-  }
-
-  startBtn.onclick = () => {
-    startTime = new Date();
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-    logDiv.textContent = `Praca rozpoczęta: ${formatTime(startTime)}`;
-  };
-
-  stopBtn.onclick = () => {
-    stopTime = new Date();
-    if (startTime) {
-      records.push({start: startTime.toISOString(), stop: stopTime.toISOString()});
-      localStorage.setItem('workRecords', JSON.stringify(records));
-      updateLog();
+  <script>
+    function startWork() {
+      const now = new Date().toISOString();
+      localStorage.setItem("startTime", now);
+      updateButtons();
     }
-    startTime = null;
-    stopTime = null;
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-  };
 
-  clearBtn.onclick = () => {
-    if (confirm('Czy na pewno chcesz wyczyścić wszystkie dane?')) {
-      records = [];
-      localStorage.removeItem('workRecords');
-      logDiv.textContent = '';
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
+    function stopWork() {
+      const start = localStorage.getItem("startTime");
+      if (!start) {
+        alert("Nie rozpocząłeś pracy.");
+        return;
+      }
+
+      const startTime = new Date(start);
+      const endTime = new Date();
+      const duration = Math.round((endTime - startTime) / 60000); // w minutach
+
+      // Dodaj wpis do tabeli
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${startTime.toLocaleDateString()}</td>
+        <td>${startTime.toLocaleTimeString()}</td>
+        <td>${endTime.toLocaleTimeString()}</td>
+        <td>${duration}</td>
+      `;
+      document.getElementById("logBody").appendChild(row);
+
+      // Zapisz do localStorage (historia)
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      logs.push({
+        date: startTime.toLocaleDateString(),
+        start: startTime.toLocaleTimeString(),
+        end: endTime.toLocaleTimeString(),
+        duration: duration
+      });
+      localStorage.setItem("logs", JSON.stringify(logs));
+
+      // Resetuj stan
+      localStorage.removeItem("startTime");
+      updateButtons();
     }
-  };
 
-  exportBtn.onclick = () => {
-    if (records.length === 0) {
-      alert('Brak danych do eksportu');
-      return;
+    function updateButtons() {
+      const started = localStorage.getItem("startTime");
+      document.getElementById("startBtn").style.display = started ? "none" : "inline-block";
+      document.getElementById("stopBtn").style.display = started ? "inline-block" : "none";
     }
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Lp.,Data,Start,Stop,Czas (min)\n";
-    records.forEach((rec, i) => {
-      const start = new Date(rec.start);
-      const stop = new Date(rec.stop);
-      const diff = Math.floor((stop - start) / 60000);
-      csvContent += `${i+1},${start.toLocaleDateString()},${formatTime(start)},${formatTime(stop)},${diff}\n`;
-    });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    const now = new Date();
-    const filename = `ewidencja_${now.toISOString().slice(0,10)}.csv`;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
-  updateLog();
-</script>
+    function loadTable() {
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      const tbody = document.getElementById("logBody");
+      tbody.innerHTML = "";
+      logs.forEach(log => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${log.date}</td>
+          <td>${log.start}</td>
+          <td>${log.end}</td>
+          <td>${log.duration}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
 
+    function exportCSV() {
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      if (logs.length === 0) {
+        alert("Brak danych do eksportu.");
+        return;
+      }
+
+      const csvRows = [
+        ["Data", "Start", "Koniec", "Czas pracy (min)"],
+        ...logs.map(log => [log.date, log.start, log.end, log.duration])
+      ];
+      const csvContent = csvRows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ewidencja.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    window.onload = () => {
+      updateButtons();
+      loadTable();
+    };
+  </script>
 </body>
 </html>
