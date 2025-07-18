@@ -2,22 +2,87 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ewidencja czasu pracy</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    button { padding: 10px 20px; margin: 5px; font-size: 16px; }
-    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background: #f8f9fa;
+    }
+
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border: 1px solid #dee2e6;
+    }
+
+    th {
+      background-color: #f1f3f5;
+    }
+
+    @media (max-width: 600px) {
+      th, td {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      button {
+        flex: 1 1 100%;
+      }
+    }
   </style>
 </head>
 <body>
+
   <h1>Ewidencja czasu pracy</h1>
 
-  <button id="startBtn" onclick="startWork()">▶️ Start</button>
-  <button id="stopBtn" onclick="stopWork()">⏹️ Zakończ</button>
-  <button onclick="exportCSV()">⬇️ Eksportuj CSV</button>
+  <div class="buttons">
+    <button id="startBtn" onclick="startWork()">▶️ Start</button>
+    <button id="stopBtn" onclick="stopWork()">⏹️ Zakończ</button>
+    <button onclick="exportCSV()">⬇️ Eksportuj CSV</button>
+    <button onclick="clearLogs()">🧹 Wyczyść historię</button>
+  </div>
 
-  <table id="logTable">
+  <table>
     <thead>
       <tr>
         <th>Data</th>
@@ -47,7 +112,6 @@
       const endTime = new Date();
       const duration = Math.round((endTime - startTime) / 60000); // w minutach
 
-      // Dodaj wpis do tabeli
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${startTime.toLocaleDateString()}</td>
@@ -57,7 +121,6 @@
       `;
       document.getElementById("logBody").appendChild(row);
 
-      // Zapisz do localStorage (historia)
       const logs = JSON.parse(localStorage.getItem("logs") || "[]");
       logs.push({
         date: startTime.toLocaleDateString(),
@@ -67,31 +130,8 @@
       });
       localStorage.setItem("logs", JSON.stringify(logs));
 
-      // Resetuj stan
       localStorage.removeItem("startTime");
       updateButtons();
-    }
-
-    function updateButtons() {
-      const started = localStorage.getItem("startTime");
-      document.getElementById("startBtn").style.display = started ? "none" : "inline-block";
-      document.getElementById("stopBtn").style.display = started ? "inline-block" : "none";
-    }
-
-    function loadTable() {
-      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-      const tbody = document.getElementById("logBody");
-      tbody.innerHTML = "";
-      logs.forEach(log => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${log.date}</td>
-          <td>${log.start}</td>
-          <td>${log.end}</td>
-          <td>${log.duration}</td>
-        `;
-        tbody.appendChild(row);
-      });
     }
 
     function exportCSV() {
@@ -114,6 +154,38 @@
       a.download = "ewidencja.csv";
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    function clearLogs() {
+      if (confirm("Na pewno chcesz usunąć całą historię?")) {
+        localStorage.removeItem("logs");
+        localStorage.removeItem("startTime");
+        document.getElementById("logBody").innerHTML = "";
+        updateButtons();
+        alert("Historia została usunięta.");
+      }
+    }
+
+    function updateButtons() {
+      const started = localStorage.getItem("startTime");
+      document.getElementById("startBtn").style.display = started ? "none" : "inline-block";
+      document.getElementById("stopBtn").style.display = started ? "inline-block" : "none";
+    }
+
+    function loadTable() {
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      const tbody = document.getElementById("logBody");
+      tbody.innerHTML = "";
+      logs.forEach(log => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${log.date}</td>
+          <td>${log.start}</td>
+          <td>${log.end}</td>
+          <td>${log.duration}</td>
+        `;
+        tbody.appendChild(row);
+      });
     }
 
     window.onload = () => {
