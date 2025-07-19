@@ -47,6 +47,7 @@
       background: white;
       border-radius: 6px;
       overflow: hidden;
+      margin-bottom: 20px;
     }
 
     th, td {
@@ -57,6 +58,13 @@
 
     th {
       background-color: #f1f3f5;
+    }
+
+    .summary {
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 10px;
     }
 
     @media (max-width: 600px) {
@@ -88,13 +96,24 @@
         <th>Data</th>
         <th>Start</th>
         <th>Koniec</th>
-        <th>Czas pracy (min)</th>
+        <th>Czas pracy</th>
       </tr>
     </thead>
     <tbody id="logBody"></tbody>
   </table>
 
+  <div class="summary" id="summary"></div>
+
   <script>
+    function formatDuration(minutes) {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      let result = "";
+      if (h > 0) result += `${h} godz. `;
+      result += `${m} min`;
+      return result;
+    }
+
     function startWork() {
       const now = new Date().toISOString();
       localStorage.setItem("startTime", now);
@@ -110,16 +129,7 @@
 
       const startTime = new Date(start);
       const endTime = new Date();
-      const duration = Math.round((endTime - startTime) / 60000); // w minutach
-
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${startTime.toLocaleDateString()}</td>
-        <td>${startTime.toLocaleTimeString()}</td>
-        <td>${endTime.toLocaleTimeString()}</td>
-        <td>${duration}</td>
-      `;
-      document.getElementById("logBody").appendChild(row);
+      const duration = Math.round((endTime - startTime) / 60000);
 
       const logs = JSON.parse(localStorage.getItem("logs") || "[]");
       logs.push({
@@ -132,6 +142,7 @@
 
       localStorage.removeItem("startTime");
       updateButtons();
+      loadTable();
     }
 
     function exportCSV() {
@@ -161,8 +172,8 @@
         localStorage.removeItem("logs");
         localStorage.removeItem("startTime");
         document.getElementById("logBody").innerHTML = "";
+        document.getElementById("summary").innerText = "";
         updateButtons();
-        alert("Historia została usunięta.");
       }
     }
 
@@ -176,16 +187,23 @@
       const logs = JSON.parse(localStorage.getItem("logs") || "[]");
       const tbody = document.getElementById("logBody");
       tbody.innerHTML = "";
+      let total = 0;
+
       logs.forEach(log => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${log.date}</td>
           <td>${log.start}</td>
           <td>${log.end}</td>
-          <td>${log.duration}</td>
+          <td>${formatDuration(log.duration)}</td>
         `;
         tbody.appendChild(row);
+        total += log.duration;
       });
+
+      document.getElementById("summary").innerText = logs.length > 0
+        ? `Łączny czas pracy: ${formatDuration(total)}`
+        : "";
     }
 
     window.onload = () => {
