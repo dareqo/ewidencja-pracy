@@ -89,7 +89,6 @@
   <div class="buttons">
     <button id="startBtn" onclick="startWork()">▶️ Start</button>
     <button id="stopBtn" onclick="stopWork()">⏹️ Zakończ</button>
-    <button onclick="exportCSV()">⬇️ Eksportuj CSV</button>
     <button onclick="exportXLSX()">📄 Eksportuj XLSX</button>
     <button onclick="clearLogs()">🧹 Wyczyść historię</button>
   </div>
@@ -147,28 +146,6 @@
       localStorage.removeItem("startTime");
       updateButtons();
       loadTable();
-    }
-
-    function exportCSV() {
-      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
-      if (logs.length === 0) {
-        alert("Brak danych do eksportu.");
-        return;
-      }
-
-      const csvRows = [
-        ["Data", "Start", "Koniec", "Czas pracy (min)"],
-        ...logs.map(log => [log.date, log.start, log.end, log.duration])
-      ];
-      const csvContent = csvRows.map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ewidencja.csv";
-      a.click();
-      URL.revokeObjectURL(url);
     }
 
     function exportXLSX() {
