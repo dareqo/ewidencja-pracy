@@ -78,6 +78,9 @@
       }
     }
   </style>
+
+  <!-- SheetJS do eksportu XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -87,6 +90,7 @@
     <button id="startBtn" onclick="startWork()">▶️ Start</button>
     <button id="stopBtn" onclick="stopWork()">⏹️ Zakończ</button>
     <button onclick="exportCSV()">⬇️ Eksportuj CSV</button>
+    <button onclick="exportXLSX()">📄 Eksportuj XLSX</button>
     <button onclick="clearLogs()">🧹 Wyczyść historię</button>
   </div>
 
@@ -165,6 +169,27 @@
       a.download = "ewidencja.csv";
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    function exportXLSX() {
+      const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+      if (logs.length === 0) {
+        alert("Brak danych do eksportu.");
+        return;
+      }
+
+      const data = logs.map(log => ({
+        Data: log.date,
+        Start: log.start,
+        Koniec: log.end,
+        "Czas pracy": formatDuration(log.duration)
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Ewidencja");
+
+      XLSX.writeFile(workbook, "ewidencja.xlsx");
     }
 
     function clearLogs() {
